@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Kuldīgas Novada Maršruti</title>
   
-  <!-- Fonti & Kartes bibliotēka -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -24,8 +23,32 @@
       --accent: #E2C438;           /* Suitu Dzeltens */
       --tag-bg: #AEB8D4;           /* Miglas Zils */
       --radius: 12px;
+      --font-scale: 1;
       --safe-bottom: env(safe-area-inset-bottom, 16px);
     }
+
+    /* Piekļūstamības režīmi */
+    body.high-contrast {
+      --bg: #000000 !important;
+      --card-bg: #0a0a0a !important;
+      --text: #ffffff !important;
+      --muted: #e2e8f0 !important;
+      --border: #ffffff !important;
+      --primary: #ffff00 !important;
+      --primary-hover: #cccc00 !important;
+      --accent: #ffff00 !important;
+      --tag-bg: #333333 !important;
+    }
+    body.high-contrast .brand svg { fill: #ffff00 !important; }
+    body.high-contrast .btn-primary { color: #000000 !important; font-weight: 700; }
+    body.high-contrast .tag { color: #ffff00 !important; border: 1px solid #ffff00; }
+
+    body.grayscale {
+      filter: grayscale(100%);
+    }
+
+    body.text-large { --font-scale: 1.2; }
+    body.text-xlarge { --font-scale: 1.4; }
 
     * {
       box-sizing: border-box;
@@ -40,9 +63,10 @@
       color: var(--text);
       line-height: 1.5;
       padding-bottom: 3rem;
+      font-size: calc(1rem * var(--font-scale));
+      transition: background-color 0.2s, color 0.2s;
     }
 
-    /* Galvene */
     header {
       background: var(--card-bg);
       border-bottom: 1px solid var(--border);
@@ -89,6 +113,29 @@
       color: var(--muted);
     }
 
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .icon-btn {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      color: var(--text);
+      width: 36px;
+      height: 36px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 1.1rem;
+      transition: all 0.2s;
+    }
+
+    .icon-btn:hover { background: var(--border); }
+
     .lang-switcher {
       display: flex;
       gap: 0.25rem;
@@ -115,70 +162,67 @@
       box-shadow: 0 1px 3px rgba(0,0,0,0.1);
     }
 
-    /* Saturs */
-    main {
-      max-width: 1200px;
-      margin: 1.25rem auto;
-      padding: 0 1rem;
+    /* Piekļūstamības izkrītošais panelis */
+    .a11y-panel {
+      display: none;
+      position: absolute;
+      top: 60px;
+      right: 1rem;
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.25rem;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+      z-index: 60;
+      width: 290px;
     }
 
-    /* Filtri ar gludu horizontālu ritināšanu mobilajās ierīcēs */
-    .filters-wrapper {
-      position: relative;
-      margin-bottom: 1.5rem;
+    .a11y-panel.open { display: block; }
+    .a11y-title { font-size: 0.9rem; font-weight: 700; margin-bottom: 0.75rem; }
+    .a11y-group { margin-bottom: 1rem; }
+    .a11y-label { font-size: 0.8rem; color: var(--muted); margin-bottom: 0.4rem; display: block; }
+    .a11y-btn-group { display: flex; gap: 0.4rem; }
+    .a11y-btn {
+      flex: 1;
+      padding: 0.4rem;
+      font-size: 0.8rem;
+      font-weight: 600;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      color: var(--text);
+      border-radius: 6px;
+      cursor: pointer;
     }
+    .a11y-btn.active { background: var(--primary); color: #fff; border-color: var(--primary); }
 
+    /* Saturs un režģis */
+    main { max-width: 1200px; margin: 1.25rem auto; padding: 0 1rem; }
+    .filters-wrapper { margin-bottom: 1.5rem; }
     .filters {
       display: flex;
       gap: 0.5rem;
       overflow-x: auto;
       padding-bottom: 0.25rem;
-      scrollbar-width: none; /* Paslēpj ritjoslu */
+      scrollbar-width: none;
     }
-
-    .filters::-webkit-scrollbar {
-      display: none;
-    }
-
+    .filters::-webkit-scrollbar { display: none; }
     .filter-btn {
       background: var(--card-bg);
       border: 1px solid var(--border);
       border-radius: 999px;
       padding: 0.5rem 1.1rem;
-      font-size: 0.85rem;
+      font-size: calc(0.85rem * var(--font-scale));
       font-weight: 500;
       color: var(--text);
       cursor: pointer;
       white-space: nowrap;
       transition: all 0.2s;
     }
+    .filter-btn.active { background: var(--primary); color: #fff; border-color: var(--primary); }
 
-    .filter-btn.active {
-      background: var(--primary);
-      color: #fff;
-      border-color: var(--primary);
-    }
-
-    /* Responsīvs režģis: 1 kolonna mobilajiem, 2 planšetēm, 3 datoram */
-    .routes-grid {
-      display: grid;
-      grid-template-columns: 1fr;
-      gap: 1.25rem;
-    }
-
-    @media (min-width: 640px) {
-      .routes-grid {
-        grid-template-columns: repeat(2, 1fr);
-        gap: 1.5rem;
-      }
-    }
-
-    @media (min-width: 1024px) {
-      .routes-grid {
-        grid-template-columns: repeat(3, 1fr);
-        gap: 1.75rem;
-      }
-    }
+    .routes-grid { display: grid; grid-template-columns: 1fr; gap: 1.25rem; }
+    @media (min-width: 640px) { .routes-grid { grid-template-columns: repeat(2, 1fr); gap: 1.5rem; } }
+    @media (min-width: 1024px) { .routes-grid { grid-template-columns: repeat(3, 1fr); gap: 1.75rem; } }
 
     .route-card {
       background: var(--card-bg);
@@ -190,35 +234,16 @@
       flex-direction: column;
       transition: transform 0.2s, box-shadow 0.2s;
     }
-
-    .route-card:active {
-      transform: scale(0.98);
-    }
-
+    .route-card:active { transform: scale(0.98); }
     @media (hover: hover) {
-      .route-card:hover {
-        transform: translateY(-3px);
-        box-shadow: 0 12px 24px rgba(33, 38, 33, 0.08);
-      }
+      .route-card:hover { transform: translateY(-3px); box-shadow: 0 12px 24px rgba(33, 38, 33, 0.08); }
     }
 
-    .card-img {
-      height: 200px;
-      width: 100%;
-      object-fit: cover;
-      background: #dfded7;
-    }
-
-    .card-body {
-      padding: 1.25rem;
-      display: flex;
-      flex-direction: column;
-      flex-grow: 1;
-    }
-
+    .card-img { height: 200px; width: 100%; object-fit: cover; background: #dfded7; }
+    .card-body { padding: 1.25rem; display: flex; flex-direction: column; flex-grow: 1; }
     .tag {
       align-self: flex-start;
-      font-size: 0.7rem;
+      font-size: calc(0.7rem * var(--font-scale));
       font-weight: 600;
       text-transform: uppercase;
       background: var(--tag-bg);
@@ -226,26 +251,11 @@
       padding: 0.2rem 0.55rem;
       border-radius: 4px;
       margin-bottom: 0.5rem;
-      letter-spacing: 0.04em;
     }
-
-    .route-title {
-      font-size: 1.15rem;
-      font-weight: 600;
-      margin-bottom: 0.4rem;
-      line-height: 1.3;
-    }
-
-    .route-meta {
-      display: flex;
-      gap: 1rem;
-      font-size: 0.85rem;
-      color: var(--muted);
-      margin-bottom: 0.75rem;
-    }
-
+    .route-title { font-size: calc(1.15rem * var(--font-scale)); font-weight: 600; margin-bottom: 0.4rem; line-height: 1.3; }
+    .route-meta { display: flex; gap: 1rem; font-size: calc(0.85rem * var(--font-scale)); color: var(--muted); margin-bottom: 0.75rem; }
     .route-desc {
-      font-size: 0.9rem;
+      font-size: calc(0.9rem * var(--font-scale));
       color: var(--muted);
       margin-top: auto;
       display: -webkit-box;
@@ -254,24 +264,12 @@
       overflow: hidden;
     }
 
-    /* Responsīvs modālais logs / Bottom Sheet */
-    .modal {
-      display: none;
-      position: fixed;
-      inset: 0;
-      background: rgba(33, 38, 33, 0.6);
-      z-index: 100;
-    }
+    /* Detaļu skats / Bottom Sheet mobilajā & Split Desktopā */
+    .modal { display: none; position: fixed; inset: 0; background: rgba(33, 38, 33, 0.6); z-index: 100; }
+    .modal.open { display: flex; }
 
-    .modal.open {
-      display: flex;
-    }
-
-    /* Mobilā versija: Bottom sheet no apakšas */
     @media (max-width: 767px) {
-      .modal {
-        align-items: flex-end;
-      }
+      .modal { align-items: flex-end; }
       .modal-content {
         background: var(--card-bg);
         width: 100%;
@@ -284,27 +282,13 @@
         padding-bottom: var(--safe-bottom);
         animation: slideUp 0.3s ease-out;
       }
-      #map {
-        height: 240px;
-        min-height: 240px;
-        width: 100%;
-      }
-      .close-btn {
-        top: 0.75rem;
-        right: 0.75rem;
-      }
-      .actions .btn {
-        width: 100%;
-      }
+      #map { height: 240px; min-height: 240px; width: 100%; }
+      .close-btn { top: 0.75rem; right: 0.75rem; }
+      .actions .btn { width: 100%; }
     }
 
-    /* Datora versija: Centrā ar Split View (divām kolonnām) */
     @media (min-width: 768px) {
-      .modal {
-        justify-content: center;
-        align-items: center;
-        padding: 2rem;
-      }
+      .modal { justify-content: center; align-items: center; padding: 2rem; }
       .modal-content {
         background: var(--card-bg);
         width: 100%;
@@ -317,26 +301,12 @@
         box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
         animation: fadeIn 0.2s ease-out;
       }
-      #map {
-        height: 100%;
-        min-height: 450px;
-        width: 100%;
-      }
-      .close-btn {
-        top: 1rem;
-        right: 1rem;
-      }
+      #map { height: 100%; min-height: 450px; width: 100%; }
+      .close-btn { top: 1rem; right: 1rem; }
     }
 
-    @keyframes slideUp {
-      from { transform: translateY(100%); }
-      to { transform: translateY(0); }
-    }
-
-    @keyframes fadeIn {
-      from { opacity: 0; transform: scale(0.98); }
-      to { opacity: 1; transform: scale(1); }
-    }
+    @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+    @keyframes fadeIn { from { opacity: 0; transform: scale(0.98); } to { opacity: 1; transform: scale(1); } }
 
     .close-btn {
       position: absolute;
@@ -353,49 +323,23 @@
       z-index: 20;
     }
 
-    .modal-body {
-      padding: 1.5rem;
-      display: flex;
-      flex-direction: column;
-      overflow-y: auto;
-    }
-
-    .actions {
-      display: flex;
-      gap: 0.75rem;
-      margin-top: 1.5rem;
-      flex-wrap: wrap;
-    }
-
+    .modal-body { padding: 1.5rem; display: flex; flex-direction: column; overflow-y: auto; }
+    .actions { display: flex; gap: 0.75rem; margin-top: 1.5rem; flex-wrap: wrap; }
     .btn {
       display: inline-flex;
       align-items: center;
       justify-content: center;
       padding: 0.8rem 1.4rem;
       border-radius: 8px;
-      font-size: 0.95rem;
+      font-size: calc(0.95rem * var(--font-scale));
       font-weight: 600;
       text-decoration: none;
       cursor: pointer;
       border: none;
       transition: background 0.2s;
     }
-
-    .btn-primary {
-      background: var(--primary);
-      color: #fff;
-    }
-
-    .btn-primary:hover {
-      background: var(--primary-hover);
-    }
-
-    .loading-notice {
-      text-align: center;
-      color: var(--muted);
-      padding: 3rem 0;
-      font-size: 1rem;
-    }
+    .btn-primary { background: var(--primary); color: #fff; }
+    .loading-notice { text-align: center; color: var(--muted); padding: 3rem 0; }
   </style>
 </head>
 <body>
@@ -403,7 +347,6 @@
   <header>
     <div class="nav-container">
       <a href="#" class="brand">
-        <!-- Kuldīgas vimbas / K zīmola simbols -->
         <svg viewBox="0 0 100 100" aria-label="Kuldīgas novads">
           <path d="M12 12 H42 V22 H32 V78 H42 V88 H12 V78 H22 V22 H12 Z"/>
           <path d="M42 50 C42 50 60 30 76 22 H92 V30 C76 42 66 50 66 50 C66 50 76 58 92 70 V78 H76 C60 70 42 50 42 50 Z"/>
@@ -414,9 +357,47 @@
           <div class="brand-sub" id="header-subtitle">Tūrisma maršruti</div>
         </div>
       </a>
-      <div class="lang-switcher">
-        <button id="btn-lv" class="active" onclick="setLanguage('lv')">LV</button>
-        <button id="btn-en" onclick="setLanguage('en')">EN</button>
+
+      <div class="header-actions">
+        <!-- Piekļūstamības poga -->
+        <button class="icon-btn" onclick="toggleA11yPanel()" aria-label="Piekļūstamības iestatījumi" title="Piekļūstamība">
+          ♿
+        </button>
+
+        <div class="lang-switcher">
+          <button id="btn-lv" class="active" onclick="setLanguage('lv')">LV</button>
+          <button id="btn-en" onclick="setLanguage('en')">EN</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Piekļūstamības vadības panelis -->
+    <div class="a11y-panel" id="a11y-panel">
+      <div class="a11y-title" id="a11y-header">Piekļūstamības iestatījumi</div>
+      
+      <div class="a11y-group">
+        <span class="a11y-label" id="a11y-size-label">Teksta izmērs:</span>
+        <div class="a11y-btn-group">
+          <button class="a11y-btn active" id="btn-text-normal" onclick="setTextSize('normal')">A</button>
+          <button class="a11y-btn" id="btn-text-large" onclick="setTextSize('large')">A+</button>
+          <button class="a11y-btn" id="btn-text-xlarge" onclick="setTextSize('xlarge')">A++</button>
+        </div>
+      </div>
+
+      <div class="a11y-group">
+        <span class="a11y-label" id="a11y-contrast-label">Kontrasts:</span>
+        <div class="a11y-btn-group">
+          <button class="a11y-btn active" id="btn-contrast-normal" onclick="setContrast('normal')">Standarta</button>
+          <button class="a11y-btn" id="btn-contrast-high" onclick="setContrast('high')">Kontrasts</button>
+        </div>
+      </div>
+
+      <div class="a11y-group">
+        <span class="a11y-label" id="a11y-color-label">Krāsas:</span>
+        <div class="a11y-btn-group">
+          <button class="a11y-btn active" id="btn-color-normal" onclick="setGrayscale(false)">Krāsains</button>
+          <button class="a11y-btn" id="btn-color-gray" onclick="setGrayscale(true)">Melnbalts</button>
+        </div>
       </div>
     </div>
   </header>
@@ -430,7 +411,6 @@
     </div>
   </main>
 
-  <!-- Modālais logs -->
   <div class="modal" id="route-modal" onclick="closeModalOnBackdrop(event)">
     <div class="modal-content">
       <button class="close-btn" onclick="closeModal()">✕</button>
@@ -442,7 +422,6 @@
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
   <script>
-    // GOOGLE SHEETS CSV SAITE
     const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vREPLACE_WITH_YOUR_ID/pub?output=csv";
 
     const uiTexts = {
@@ -456,8 +435,15 @@
         distance: "Garums",
         duration: "Laiks",
         surface: "Segums",
-        loading: "Ielādē maršrutus...",
-        empty: "Nav atrasts neviens maršruts šajā sadaļā."
+        empty: "Nav atrasts neviens maršruts šajā sadaļā.",
+        a11yTitle: "Piekļūstamība",
+        textSize: "Teksta izmērs:",
+        contrast: "Kontrasts:",
+        color: "Krāsu režīms:",
+        normal: "Standarta",
+        highContrast: "Augsts",
+        colorful: "Krāsains",
+        grayscale: "Melnbalts"
       },
       en: {
         subtitle: "Tourism Trails & Routes",
@@ -469,8 +455,15 @@
         distance: "Distance",
         duration: "Duration",
         surface: "Surface",
-        loading: "Loading trails...",
-        empty: "No trails found in this section."
+        empty: "No trails found in this section.",
+        a11yTitle: "Accessibility",
+        textSize: "Text size:",
+        contrast: "Contrast:",
+        color: "Color mode:",
+        normal: "Standard",
+        highContrast: "High",
+        colorful: "Color",
+        grayscale: "Monochrome"
       }
     };
 
@@ -480,9 +473,66 @@
     let mapInstance = null;
     let markerInstance = null;
 
+    // --- PIEKĻŪSTAMĪBAS LOĢIKA ---
+    function toggleA11yPanel() {
+      document.getElementById('a11y-panel').classList.toggle('open');
+    }
+
+    function setTextSize(size) {
+      document.body.classList.remove('text-large', 'text-xlarge');
+      document.getElementById('btn-text-normal').classList.remove('active');
+      document.getElementById('btn-text-large').classList.remove('active');
+      document.getElementById('btn-text-xlarge').classList.remove('active');
+
+      if (size === 'large') document.body.classList.add('text-large');
+      if (size === 'xlarge') document.body.classList.add('text-xlarge');
+
+      document.getElementById('btn-text-' + size).classList.add('active');
+      localStorage.setItem('a11y-text-size', size);
+    }
+
+    function setContrast(mode) {
+      document.body.classList.remove('high-contrast');
+      document.getElementById('btn-contrast-normal').classList.remove('active');
+      document.getElementById('btn-contrast-high').classList.remove('active');
+
+      if (mode === 'high') document.body.classList.add('high-contrast');
+
+      document.getElementById('btn-contrast-' + mode).classList.add('active');
+      localStorage.setItem('a11y-contrast', mode);
+    }
+
+    function setGrayscale(enabled) {
+      document.body.classList.toggle('grayscale', enabled);
+      document.getElementById('btn-color-normal').classList.toggle('active', !enabled);
+      document.getElementById('btn-color-gray').classList.toggle('active', enabled);
+      localStorage.setItem('a11y-grayscale', enabled ? 'true' : 'false');
+    }
+
+    function loadA11yPreferences() {
+      const savedSize = localStorage.getItem('a11y-text-size') || 'normal';
+      const savedContrast = localStorage.getItem('a11y-contrast') || 'normal';
+      const savedGray = localStorage.getItem('a11y-grayscale') === 'true';
+
+      setTextSize(savedSize);
+      setContrast(savedContrast);
+      setGrayscale(savedGray);
+    }
+
+    // Aizver piekļūstamības paneli, noklikšķinot ārpus tā
+    document.addEventListener('click', (e) => {
+      const panel = document.getElementById('a11y-panel');
+      const btn = e.target.closest('.icon-btn');
+      if (!panel.contains(e.target) && !btn) {
+        panel.classList.remove('open');
+      }
+    });
+
+    // --- LIETOTNES PAMATA LOĢIKA ---
     function initData() {
+      loadA11yPreferences();
+
       if (SHEET_CSV_URL.includes("REPLACE_WITH_YOUR_ID")) {
-        // Testa dati pārlūkošanai
         routesData = [
           {
             id: "kuldiga-oldtown",
@@ -555,6 +605,17 @@
       document.getElementById('btn-lv').classList.toggle('active', lang === 'lv');
       document.getElementById('btn-en').classList.toggle('active', lang === 'en');
       document.getElementById('header-subtitle').textContent = uiTexts[lang].subtitle;
+
+      // Piekļūstamības paneļa tekstu tulkojumi
+      document.getElementById('a11y-header').textContent = uiTexts[lang].a11yTitle;
+      document.getElementById('a11y-size-label').textContent = uiTexts[lang].textSize;
+      document.getElementById('a11y-contrast-label').textContent = uiTexts[lang].contrast;
+      document.getElementById('a11y-color-label').textContent = uiTexts[lang].color;
+      document.getElementById('btn-contrast-normal').textContent = uiTexts[lang].normal;
+      document.getElementById('btn-contrast-high').textContent = uiTexts[lang].highContrast;
+      document.getElementById('btn-color-normal').textContent = uiTexts[lang].colorful;
+      document.getElementById('btn-color-gray').textContent = uiTexts[lang].grayscale;
+
       renderFilters();
       renderRoutes();
     }
@@ -608,13 +669,13 @@
       const gmapsLink = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`;
 
       document.getElementById('modal-details').innerHTML = `
-        <h2 style="font-size: 1.35rem; font-weight:700; line-height: 1.25; margin-bottom: 0.5rem;">${route['title_' + currentLang]}</h2>
+        <h2 style="font-size: calc(1.35rem * var(--font-scale)); font-weight:700; line-height: 1.25; margin-bottom: 0.5rem;">${route['title_' + currentLang]}</h2>
         <div class="route-meta" style="flex-wrap: wrap; margin-bottom: 1rem;">
           <span>📏 ${uiTexts[currentLang].distance}: <strong>${route.distance}</strong></span>
           <span>⏱ ${uiTexts[currentLang].duration}: <strong>${route.duration}</strong></span>
         </div>
-        <p style="font-size: 0.9rem; margin-bottom: 1rem; color: var(--muted);"><strong>${uiTexts[currentLang].surface}:</strong> ${route['surface_' + currentLang]}</p>
-        <p style="font-size: 0.95rem; line-height: 1.6; color: #374151; margin-bottom: 1.5rem;">${route['desc_' + currentLang]}</p>
+        <p style="font-size: calc(0.9rem * var(--font-scale)); margin-bottom: 1rem; color: var(--muted);"><strong>${uiTexts[currentLang].surface}:</strong> ${route['surface_' + currentLang]}</p>
+        <p style="font-size: calc(0.95rem * var(--font-scale)); line-height: 1.6; color: var(--text); margin-bottom: 1.5rem;">${route['desc_' + currentLang]}</p>
         <div class="actions" style="margin-top: auto;">
           <a href="${gmapsLink}" target="_blank" class="btn btn-primary">${uiTexts[currentLang].startRoute}</a>
         </div>
@@ -637,13 +698,8 @@
       }, 200);
     }
 
-    function closeModal() {
-      document.getElementById('route-modal').classList.remove('open');
-    }
-
-    function closeModalOnBackdrop(e) {
-      if (e.target.id === 'route-modal') closeModal();
-    }
+    function closeModal() { document.getElementById('route-modal').classList.remove('open'); }
+    function closeModalOnBackdrop(e) { if (e.target.id === 'route-modal') closeModal(); }
 
     initData();
   </script>
