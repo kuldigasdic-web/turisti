@@ -2,20 +2,18 @@
 <html lang="lv">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Kuldīgas Novada Maršruti</title>
   
-  <!-- Fonts: Inter (vadlīnijās noteiktā alternatīva ikdienas un digitālajai videi) -->
+  <!-- Fonti & Kartes bibliotēka -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  
-  <!-- Leaflet karte -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
 
   <style>
     :root {
-      /* Kuldīgas novada zīmola grāmatas krāsas */
       --primary: #3F4D33;         /* Meža Zaļš */
       --primary-hover: #2d3824;
       --bg: #EEEEE6;              /* Muižas Balts */
@@ -25,7 +23,8 @@
       --border: #D3CBBE;           /* Sudrabs */
       --accent: #E2C438;           /* Suitu Dzeltens */
       --tag-bg: #AEB8D4;           /* Miglas Zils */
-      --radius: 8px;               /* Tīras, minimālas līnijas */
+      --radius: 12px;
+      --safe-bottom: env(safe-area-inset-bottom, 16px);
     }
 
     * {
@@ -33,27 +32,30 @@
       margin: 0;
       padding: 0;
       font-family: 'Inter', -apple-system, sans-serif;
+      -webkit-tap-highlight-color: transparent;
     }
 
     body {
       background-color: var(--bg);
       color: var(--text);
       line-height: 1.5;
-      padding-bottom: 4rem;
+      padding-bottom: 3rem;
     }
 
+    /* Galvene */
     header {
       background: var(--card-bg);
       border-bottom: 1px solid var(--border);
       position: sticky;
       top: 0;
       z-index: 50;
+      backdrop-filter: blur(8px);
     }
 
     .nav-container {
-      max-width: 1100px;
+      max-width: 1200px;
       margin: 0 auto;
-      padding: 0.9rem 1.25rem;
+      padding: 0.75rem 1rem;
       display: flex;
       justify-content: space-between;
       align-items: center;
@@ -62,74 +64,87 @@
     .brand {
       display: flex;
       align-items: center;
-      gap: 0.85rem;
+      gap: 0.75rem;
       text-decoration: none;
       color: var(--text);
     }
 
     .brand svg {
-      height: 38px;
+      height: 34px;
       width: auto;
       fill: var(--primary);
-    }
-
-    .brand-meta {
-      display: flex;
-      flex-direction: column;
+      flex-shrink: 0;
     }
 
     .brand-title {
       font-size: 0.95rem;
       font-weight: 700;
-      letter-spacing: 0.08em;
+      letter-spacing: 0.05em;
       text-transform: uppercase;
-      line-height: 1.15;
+      line-height: 1.1;
     }
 
     .brand-sub {
-      font-size: 0.75rem;
+      font-size: 0.72rem;
       color: var(--muted);
-      letter-spacing: 0.02em;
+    }
+
+    .lang-switcher {
+      display: flex;
+      gap: 0.25rem;
+      background: var(--bg);
+      padding: 3px;
+      border-radius: 8px;
     }
 
     .lang-switcher button {
       background: transparent;
-      border: 1px solid var(--border);
+      border: none;
       color: var(--text);
-      padding: 0.35rem 0.75rem;
-      border-radius: var(--radius);
+      padding: 0.35rem 0.65rem;
+      border-radius: 6px;
       font-weight: 600;
       cursor: pointer;
-      font-size: 0.8rem;
+      font-size: 0.75rem;
       transition: all 0.2s;
     }
 
     .lang-switcher button.active {
-      background: var(--primary);
-      color: #fff;
-      border-color: var(--primary);
+      background: var(--card-bg);
+      color: var(--primary);
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
     }
 
+    /* Saturs */
     main {
-      max-width: 1100px;
-      margin: 2rem auto;
-      padding: 0 1.25rem;
+      max-width: 1200px;
+      margin: 1.25rem auto;
+      padding: 0 1rem;
     }
 
-    /* Filtri */
+    /* Filtri ar gludu horizontālu ritināšanu mobilajās ierīcēs */
+    .filters-wrapper {
+      position: relative;
+      margin-bottom: 1.5rem;
+    }
+
     .filters {
       display: flex;
       gap: 0.5rem;
       overflow-x: auto;
-      padding-bottom: 0.5rem;
-      margin-bottom: 1.5rem;
+      padding-bottom: 0.25rem;
+      scrollbar-width: none; /* Paslēpj ritjoslu */
+    }
+
+    .filters::-webkit-scrollbar {
+      display: none;
     }
 
     .filter-btn {
       background: var(--card-bg);
       border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 0.45rem 1.1rem;
+      border-radius: 999px;
+      padding: 0.5rem 1.1rem;
       font-size: 0.85rem;
       font-weight: 500;
       color: var(--text);
@@ -144,11 +159,25 @@
       border-color: var(--primary);
     }
 
-    /* Režģis */
+    /* Responsīvs režģis: 1 kolonna mobilajiem, 2 planšetēm, 3 datoram */
     .routes-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-      gap: 1.5rem;
+      grid-template-columns: 1fr;
+      gap: 1.25rem;
+    }
+
+    @media (min-width: 640px) {
+      .routes-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1.5rem;
+      }
+    }
+
+    @media (min-width: 1024px) {
+      .routes-grid {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 1.75rem;
+      }
     }
 
     .route-card {
@@ -157,14 +186,20 @@
       border-radius: var(--radius);
       overflow: hidden;
       cursor: pointer;
-      transition: transform 0.2s, box-shadow 0.2s;
       display: flex;
       flex-direction: column;
+      transition: transform 0.2s, box-shadow 0.2s;
     }
 
-    .route-card:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 8px 20px rgba(33, 38, 33, 0.06);
+    .route-card:active {
+      transform: scale(0.98);
+    }
+
+    @media (hover: hover) {
+      .route-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 12px 24px rgba(33, 38, 33, 0.08);
+      }
     }
 
     .card-img {
@@ -181,13 +216,8 @@
       flex-grow: 1;
     }
 
-    .tags {
-      display: flex;
-      gap: 0.5rem;
-      margin-bottom: 0.5rem;
-    }
-
     .tag {
+      align-self: flex-start;
       font-size: 0.7rem;
       font-weight: 600;
       text-transform: uppercase;
@@ -195,14 +225,15 @@
       color: var(--text);
       padding: 0.2rem 0.55rem;
       border-radius: 4px;
-      letter-spacing: 0.05em;
+      margin-bottom: 0.5rem;
+      letter-spacing: 0.04em;
     }
 
     .route-title {
       font-size: 1.15rem;
       font-weight: 600;
-      margin-bottom: 0.35rem;
-      color: var(--text);
+      margin-bottom: 0.4rem;
+      line-height: 1.3;
     }
 
     .route-meta {
@@ -217,40 +248,98 @@
       font-size: 0.9rem;
       color: var(--muted);
       margin-top: auto;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
     }
 
-    /* Modālais logs */
+    /* Responsīvs modālais logs / Bottom Sheet */
     .modal {
       display: none;
       position: fixed;
       inset: 0;
       background: rgba(33, 38, 33, 0.6);
       z-index: 100;
-      overflow-y: auto;
-      padding: 1.25rem;
     }
 
     .modal.open {
       display: flex;
-      justify-content: center;
-      align-items: flex-start;
     }
 
-    .modal-content {
-      background: var(--card-bg);
-      width: 100%;
-      max-width: 760px;
-      border-radius: var(--radius);
-      margin: 2rem 0;
-      overflow: hidden;
-      box-shadow: 0 20px 30px rgba(0, 0, 0, 0.15);
-      position: relative;
+    /* Mobilā versija: Bottom sheet no apakšas */
+    @media (max-width: 767px) {
+      .modal {
+        align-items: flex-end;
+      }
+      .modal-content {
+        background: var(--card-bg);
+        width: 100%;
+        max-height: 90vh;
+        border-top-left-radius: 20px;
+        border-top-right-radius: 20px;
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+        padding-bottom: var(--safe-bottom);
+        animation: slideUp 0.3s ease-out;
+      }
+      #map {
+        height: 240px;
+        min-height: 240px;
+        width: 100%;
+      }
+      .close-btn {
+        top: 0.75rem;
+        right: 0.75rem;
+      }
+      .actions .btn {
+        width: 100%;
+      }
+    }
+
+    /* Datora versija: Centrā ar Split View (divām kolonnām) */
+    @media (min-width: 768px) {
+      .modal {
+        justify-content: center;
+        align-items: center;
+        padding: 2rem;
+      }
+      .modal-content {
+        background: var(--card-bg);
+        width: 100%;
+        max-width: 900px;
+        border-radius: var(--radius);
+        overflow: hidden;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        max-height: 85vh;
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+        animation: fadeIn 0.2s ease-out;
+      }
+      #map {
+        height: 100%;
+        min-height: 450px;
+        width: 100%;
+      }
+      .close-btn {
+        top: 1rem;
+        right: 1rem;
+      }
+    }
+
+    @keyframes slideUp {
+      from { transform: translateY(100%); }
+      to { transform: translateY(0); }
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: scale(0.98); }
+      to { opacity: 1; transform: scale(1); }
     }
 
     .close-btn {
       position: absolute;
-      top: 1rem;
-      right: 1rem;
       background: rgba(255, 255, 255, 0.95);
       border: 1px solid var(--border);
       border-radius: 50%;
@@ -261,23 +350,20 @@
       justify-content: center;
       cursor: pointer;
       font-size: 1.1rem;
-      z-index: 10;
-    }
-
-    #map {
-      height: 340px;
-      width: 100%;
-      background: #dfded7;
+      z-index: 20;
     }
 
     .modal-body {
-      padding: 1.75rem;
+      padding: 1.5rem;
+      display: flex;
+      flex-direction: column;
+      overflow-y: auto;
     }
 
     .actions {
       display: flex;
       gap: 0.75rem;
-      margin: 1.5rem 0 0 0;
+      margin-top: 1.5rem;
       flex-wrap: wrap;
     }
 
@@ -285,9 +371,9 @@
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      padding: 0.65rem 1.35rem;
-      border-radius: var(--radius);
-      font-size: 0.9rem;
+      padding: 0.8rem 1.4rem;
+      border-radius: 8px;
+      font-size: 0.95rem;
       font-weight: 600;
       text-decoration: none;
       cursor: pointer;
@@ -304,14 +390,11 @@
       background: var(--primary-hover);
     }
 
-    .btn-secondary {
-      background: var(--bg);
-      border: 1px solid var(--border);
-      color: var(--text);
-    }
-
-    .btn-secondary:hover {
-      background: #e4e3da;
+    .loading-notice {
+      text-align: center;
+      color: var(--muted);
+      padding: 3rem 0;
+      font-size: 1rem;
     }
   </style>
 </head>
@@ -320,15 +403,15 @@
   <header>
     <div class="nav-container">
       <a href="#" class="brand">
-        <!-- Oficiālais Kuldīgas novada K/vimbas simbols kā precīzs SVG vektors -->
+        <!-- Kuldīgas vimbas / K zīmola simbols -->
         <svg viewBox="0 0 100 100" aria-label="Kuldīgas novads">
           <path d="M12 12 H42 V22 H32 V78 H42 V88 H12 V78 H22 V22 H12 Z"/>
           <path d="M42 50 C42 50 60 30 76 22 H92 V30 C76 42 66 50 66 50 C66 50 76 58 92 70 V78 H76 C60 70 42 50 42 50 Z"/>
           <ellipse cx="58" cy="50" rx="14" ry="7" fill="var(--card-bg)"/>
         </svg>
-        <div class="brand-meta">
-          <span class="brand-title">Kuldīgas Novads</span>
-          <span class="brand-sub" id="header-subtitle">Tūrisma maršruti</span>
+        <div>
+          <div class="brand-title">Kuldīgas Novads</div>
+          <div class="brand-sub" id="header-subtitle">Tūrisma maršruti</div>
         </div>
       </a>
       <div class="lang-switcher">
@@ -339,10 +422,15 @@
   </header>
 
   <main>
-    <div class="filters" id="filters-container"></div>
-    <div class="routes-grid" id="routes-container"></div>
+    <div class="filters-wrapper">
+      <div class="filters" id="filters-container"></div>
+    </div>
+    <div class="routes-grid" id="routes-container">
+      <div class="loading-notice" id="loading-state">Ielādē maršrutus...</div>
+    </div>
   </main>
 
+  <!-- Modālais logs -->
   <div class="modal" id="route-modal" onclick="closeModalOnBackdrop(event)">
     <div class="modal-content">
       <button class="close-btn" onclick="closeModal()">✕</button>
@@ -354,100 +442,113 @@
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
   <script>
+    // GOOGLE SHEETS CSV SAITE
+    const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vREPLACE_WITH_YOUR_ID/pub?output=csv";
+
     const uiTexts = {
       lv: {
         subtitle: "Tūrisma maršruti",
-        all: "Visi maršruti",
-        walking: "Kājāmgājējiem",
-        cycling: "Velobraucējiem",
+        all: "Visi",
+        walking: "Kājām",
+        cycling: "Velo",
         heritage: "Kultūrvēsture",
-        startRoute: "Doties maršrutā (Google Maps)",
-        downloadGpx: "Lejupielādēt GPX",
+        startRoute: "Sākt maršrutu (Google Maps)",
         distance: "Garums",
-        duration: "Aptuvenais laiks",
-        surface: "Segums"
+        duration: "Laiks",
+        surface: "Segums",
+        loading: "Ielādē maršrutus...",
+        empty: "Nav atrasts neviens maršruts šajā sadaļā."
       },
       en: {
         subtitle: "Tourism Trails & Routes",
-        all: "All trails",
-        walking: "Walking & Hiking",
+        all: "All",
+        walking: "Walking",
         cycling: "Cycling",
         heritage: "Heritage",
-        startRoute: "Navigate (Google Maps)",
-        downloadGpx: "Download GPX",
+        startRoute: "Start (Google Maps)",
         distance: "Distance",
-        duration: "Estimated time",
-        surface: "Trail surface"
+        duration: "Duration",
+        surface: "Surface",
+        loading: "Loading trails...",
+        empty: "No trails found in this section."
       }
     };
 
-    // Reāli Kuldīgas novada maršrutu dati
-    const routesData = [
-      {
-        id: "kuldiga-oldtown",
-        type: "walking",
-        distance: "3.2 km",
-        duration: "1.0 h",
-        surface_lv: "Bruģis, grants, koka laipas",
-        surface_en: "Cobblestone, gravel, boardwalk",
-        image: "https://images.unsplash.com/photo-1544197150-b99a580bb7a8?w=800&q=80",
-        title_lv: "Ventas rumba un vēsturiskā vecpilsēta",
-        title_en: "Venta Rapid & UNESCO Historic Old Town",
-        desc_lv: "UNESCO Pasaules mantojuma pērle — Alekšupītes ūdenskritums, senais ķieģeļu tilts un pastaiga gar Ventas krastu.",
-        desc_en: "A stroll through UNESCO heritage — Europe's widest waterfall, historic brick bridge, and preserved 17th-18th century architecture.",
-        coordinates: [
-          [56.9688, 21.9772],
-          [56.9697, 21.9785],
-          [56.9675, 21.9730],
-          [56.9658, 21.9680]
-        ],
-        gpxUrl: "#"
-      },
-      {
-        id: "renda-maras-kambari",
-        type: "walking",
-        distance: "5.5 km",
-        duration: "1.5 h",
-        surface_lv: "Meža un upes ielejas takas",
-        surface_en: "Forest paths, river valley",
-        image: "https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=800&q=80",
-        title_lv: "Māras kambari un Abavas senleja",
-        title_en: "Māra's Chambers & Abava Valley",
-        desc_lv: "Taka Rendas pagastā uz smilšakmens alām Abavas labajā krastā caur neskartu Kurzemes dabu.",
-        desc_en: "A scenic forest trail in Renda leading to naturally sculpted sandstone caves along the Abava river valley.",
-        coordinates: [
-          [57.0792, 22.3421],
-          [57.0820, 22.3460],
-          [57.0865, 22.3510]
-        ],
-        gpxUrl: "#"
-      },
-      {
-        id: "alsunga-suiti",
-        type: "heritage",
-        distance: "12.0 km",
-        duration: "2.5 h",
-        surface_lv: "Asfalts, lauku ceļi",
-        surface_en: "Paved, rural gravel",
-        image: "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=800&q=80",
-        title_lv: "Suitu kultūrtelpas loks Alsungā",
-        title_en: "Suiti Cultural Heritage Circuit",
-        desc_lv: "Iepazīsti unikālo UNESCO Suitu novadu: Alsungas viduslaiku pili, Dižgabalkalnu un vietējās tradīcijas.",
-        desc_en: "Explore the living UNESCO Suiti culture, the 14th-century Alsunga castle, ancient hillfort, and local crafts.",
-        coordinates: [
-          [56.9818, 21.5670],
-          [56.9840, 21.5720],
-          [56.9750, 21.5800],
-          [56.9818, 21.5670]
-        ],
-        gpxUrl: "#"
-      }
-    ];
-
+    let routesData = [];
     let currentLang = 'lv';
     let currentFilter = 'all';
     let mapInstance = null;
-    let routeLineLayer = null;
+    let markerInstance = null;
+
+    function initData() {
+      if (SHEET_CSV_URL.includes("REPLACE_WITH_YOUR_ID")) {
+        // Testa dati pārlūkošanai
+        routesData = [
+          {
+            id: "kuldiga-oldtown",
+            type: "walking",
+            distance: "3.2 km",
+            duration: "1.0 h",
+            surface_lv: "Bruģis, grants takas",
+            surface_en: "Cobblestone, gravel paths",
+            image: "https://images.unsplash.com/photo-1544197150-b99a580bb7a8?w=800&q=80",
+            title_lv: "Ventas rumba un vecpilsēta",
+            title_en: "Venta Rapid & Old Town",
+            desc_lv: "UNESCO Pasaules mantojuma pērle, senais ķieģeļu tilts un Alekšupītes ūdenskritums gleznainā pastaigā cauri Kuldīgai.",
+            desc_en: "UNESCO World Heritage site, the ancient brick bridge, and scenic views along the Venta river.",
+            coords: "56.9688,21.9772",
+            status: "published"
+          },
+          {
+            id: "maras-kambari",
+            type: "walking",
+            distance: "5.5 km",
+            duration: "1.5 h",
+            surface_lv: "Meža un ielejas takas",
+            surface_en: "Forest paths",
+            image: "https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=800&q=80",
+            title_lv: "Māras kambari un Abavas senleja",
+            title_en: "Māra's Chambers & Abava Valley",
+            desc_lv: "Dabas taka Rendas pusē gar Abavas upi līdz teiksmainajām smilšakmens alām.",
+            desc_en: "A peaceful nature walk in Renda heading towards the legendary sandstone caves.",
+            coords: "57.0792,22.3421",
+            status: "published"
+          },
+          {
+            id: "alsunga-suiti",
+            type: "heritage",
+            distance: "12.0 km",
+            duration: "2.5 h",
+            surface_lv: "Asfalts, grants ceļi",
+            surface_en: "Asphalt, rural roads",
+            image: "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=800&q=80",
+            title_lv: "Suitu kultūrtelpas loks",
+            title_en: "Suiti Heritage Route",
+            desc_lv: "Alsungas pils, Dižgabalkalns un iepazīšanās ar unikālo UNESCO suitu kultūru Kurzemes sirdī.",
+            desc_en: "Discover Alsunga Castle and living Suiti traditions in western Latvia.",
+            coords: "56.9818,21.5670",
+            status: "published"
+          }
+        ];
+        renderFilters();
+        renderRoutes();
+        return;
+      }
+
+      Papa.parse(SHEET_CSV_URL, {
+        download: true,
+        header: true,
+        skipEmptyLines: true,
+        complete: function(results) {
+          routesData = results.data.filter(r => r.status && r.status.trim().toLowerCase() === 'published');
+          renderFilters();
+          renderRoutes();
+        },
+        error: function() {
+          document.getElementById('loading-state').textContent = "Neizdevās ielādēt datus no tabulas.";
+        }
+      });
+    }
 
     function setLanguage(lang) {
       currentLang = lang;
@@ -462,9 +563,8 @@
       const container = document.getElementById('filters-container');
       const types = ['all', 'walking', 'cycling', 'heritage'];
       container.innerHTML = types.map(type => `
-        <button class="filter-btn ${currentFilter === type ? 'active' : ''}" 
-                onclick="setFilter('${type}')">
-          ${uiTexts[currentLang][type]}
+        <button class="filter-btn ${currentFilter === type ? 'active' : ''}" onclick="setFilter('${type}')">
+          ${uiTexts[currentLang][type] || type}
         </button>
       `).join('');
     }
@@ -479,13 +579,16 @@
       const container = document.getElementById('routes-container');
       const filtered = routesData.filter(r => currentFilter === 'all' || r.type === currentFilter);
 
+      if (filtered.length === 0) {
+        container.innerHTML = `<div class="loading-notice">${uiTexts[currentLang].empty}</div>`;
+        return;
+      }
+
       container.innerHTML = filtered.map(r => `
         <div class="route-card" onclick="openRoute('${r.id}')">
-          <img class="card-img" src="${r.image}" alt="${r['title_' + currentLang]}">
+          <img class="card-img" src="${r.image}" alt="${r['title_' + currentLang]}" loading="lazy">
           <div class="card-body">
-            <div class="tags">
-              <span class="tag">${uiTexts[currentLang][r.type]}</span>
-            </div>
+            <span class="tag">${uiTexts[currentLang][r.type] || r.type}</span>
             <h3 class="route-title">${r['title_' + currentLang]}</h3>
             <div class="route-meta">
               <span>📏 ${r.distance}</span>
@@ -501,30 +604,23 @@
       const route = routesData.find(r => r.id === id);
       if (!route) return;
 
-      const modal = document.getElementById('route-modal');
-      const details = document.getElementById('modal-details');
-      const startCoord = route.coordinates[0];
-      const gmapsLink = `https://www.google.com/maps/dir/?api=1&destination=${startCoord[0]},${startCoord[1]}`;
+      const [lat, lng] = route.coords.split(',').map(c => parseFloat(c.trim()));
+      const gmapsLink = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`;
 
-      details.innerHTML = `
-        <h2 style="font-weight:700; color:var(--text); margin-bottom: 0.5rem;">${route['title_' + currentLang]}</h2>
-        <div class="route-meta">
-          <span>📏 ${uiTexts[currentLang].distance}: ${route.distance}</span>
-          <span>⏱ ${uiTexts[currentLang].duration}: ${route.duration}</span>
-          <span>🛣 ${uiTexts[currentLang].surface}: ${route['surface_' + currentLang]}</span>
+      document.getElementById('modal-details').innerHTML = `
+        <h2 style="font-size: 1.35rem; font-weight:700; line-height: 1.25; margin-bottom: 0.5rem;">${route['title_' + currentLang]}</h2>
+        <div class="route-meta" style="flex-wrap: wrap; margin-bottom: 1rem;">
+          <span>📏 ${uiTexts[currentLang].distance}: <strong>${route.distance}</strong></span>
+          <span>⏱ ${uiTexts[currentLang].duration}: <strong>${route.duration}</strong></span>
         </div>
-        <p style="margin: 1.25rem 0; color: var(--muted);">${route['desc_' + currentLang]}</p>
-        <div class="actions">
-          <a href="${gmapsLink}" target="_blank" class="btn btn-primary">
-            ${uiTexts[currentLang].startRoute}
-          </a>
-          <a href="${route.gpxUrl}" class="btn btn-secondary">
-            ${uiTexts[currentLang].downloadGpx}
-          </a>
+        <p style="font-size: 0.9rem; margin-bottom: 1rem; color: var(--muted);"><strong>${uiTexts[currentLang].surface}:</strong> ${route['surface_' + currentLang]}</p>
+        <p style="font-size: 0.95rem; line-height: 1.6; color: #374151; margin-bottom: 1.5rem;">${route['desc_' + currentLang]}</p>
+        <div class="actions" style="margin-top: auto;">
+          <a href="${gmapsLink}" target="_blank" class="btn btn-primary">${uiTexts[currentLang].startRoute}</a>
         </div>
       `;
 
-      modal.classList.add('open');
+      document.getElementById('route-modal').classList.add('open');
 
       setTimeout(() => {
         if (!mapInstance) {
@@ -533,19 +629,12 @@
             attribution: '© OpenStreetMap contributors'
           }).addTo(mapInstance);
         }
+        if (markerInstance) mapInstance.removeLayer(markerInstance);
 
-        if (routeLineLayer) {
-          mapInstance.removeLayer(routeLineLayer);
-        }
-
-        routeLineLayer = L.polyline(route.coordinates, {
-          color: '#3F4D33',
-          weight: 5
-        }).addTo(mapInstance);
-
-        L.marker(startCoord).addTo(mapInstance);
-        mapInstance.fitBounds(routeLineLayer.getBounds(), { padding: [40, 40] });
-      }, 100);
+        mapInstance.invalidateSize();
+        mapInstance.setView([lat, lng], 14);
+        markerInstance = L.marker([lat, lng]).addTo(mapInstance);
+      }, 200);
     }
 
     function closeModal() {
@@ -556,7 +645,7 @@
       if (e.target.id === 'route-modal') closeModal();
     }
 
-    setLanguage('lv');
+    initData();
   </script>
 </body>
 </html>
